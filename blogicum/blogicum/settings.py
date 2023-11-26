@@ -26,12 +26,17 @@ SECRET_KEY = 'django-insecure-ao&2_x13$&7spgwx5%6s0wa7_qh0(2ek4io42^ic&%ik$(=6s3
 DEBUG = True
 POSTS_ON_PAGE = 5
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1'
+]
 
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Application definition
 
 INSTALLED_APPS = [
+    'django_bootstrap5',
     'blog.apps.BlogConfig',
     'pages.apps.PagesConfig',
     'django.contrib.admin',

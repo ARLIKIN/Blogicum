@@ -58,6 +58,7 @@ class PostManager(models.Manager):
 
 class Post (PublishedModel, TitleModel):
     text = models.TextField(verbose_name='Текст')
+    image = models.ImageField('Фото', upload_to='birthdays_images', blank=True)
     pub_date = models.DateTimeField(
         verbose_name='Дата и время публикации',
         help_text='Если установить дату и время в '
@@ -67,6 +68,7 @@ class Post (PublishedModel, TitleModel):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        related_name='posts',
         verbose_name='Автор публикации'
     )
     location = models.ForeignKey(
