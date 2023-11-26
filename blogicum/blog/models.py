@@ -58,7 +58,7 @@ class PostManager(models.Manager):
 
 class Post (PublishedModel, TitleModel):
     text = models.TextField(verbose_name='Текст')
-    image = models.ImageField('Фото', upload_to='birthdays_images', blank=True)
+    image = models.ImageField('Фото', upload_to='blog_images', blank=True)
     pub_date = models.DateTimeField(
         verbose_name='Дата и время публикации',
         help_text='Если установить дату и время в '

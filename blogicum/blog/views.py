@@ -6,13 +6,14 @@ from django.core.paginator import Paginator
 
 from .models import Post, Category, User
 
-ITEM_PER_PAGE = 10
-
 
 def index(request):
     template = 'blog/index.html'
-    post_list = Post.published.order_by('title')[:settings.POSTS_ON_PAGE]
-    context = {'post': post_list}
+    page_obj = control_paginator(
+        request.GET.get('page'),
+        Post.published.order_by('title')
+    )
+    context = {'page_obj': page_obj}
     return render(request, template, context)
 
 
@@ -30,20 +31,28 @@ def category_posts(request, category_slug):
         is_published=True,
         slug=category_slug
     )
-    post_list = get_list_or_404(category.posts(manager='published'))
-
-    context = {'post_list': post_list, 'category': category}
+    page_obj = control_paginator(
+        request.GET.get('page'),
+        category.posts(manager='published').all()
+    )
+    context = {'page_obj': page_obj, 'category': category}
     return render(request, template, context)
 
 
 def profile(request, username):
     template = 'blog/profile.html'
     user = get_object_or_404(User, username=username)
-    paginator = Paginator(user.posts(manager='published').all(), ITEM_PER_PAGE)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = control_paginator(
+        request.GET.get('page'),
+        user.posts(manager='published').all()
+    )
     context = {'profile': user, 'page_obj': page_obj}
     return render(request, template, context)
+
+
+def control_paginator(page, list_obj):
+    paginator = Paginator(list_obj, settings.ITEM_PER_PAGE)
+    return paginator.get_page(page)
 
 
 def create_post(request):

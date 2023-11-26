@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-ao&2_x13$&7spgwx5%6s0wa7_qh0(2ek4io42^ic&%ik$(=6s3
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-POSTS_ON_PAGE = 5
+ITEM_PER_PAGE = 10
 
 ALLOWED_HOSTS = [
     'localhost',
