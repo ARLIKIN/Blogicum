@@ -61,6 +61,10 @@ def create_post(request):
     #return render(request, template, context)
 
 
+def add_comment(request, post_id):
+    pass
+
+
 def profile_edit(request):
     pass
 
