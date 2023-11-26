@@ -3,6 +3,7 @@ import datetime as dt
 
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 from django.utils import timezone
 
 from core.models import PublishedModel, TitleModel
@@ -43,12 +44,13 @@ User = get_user_model()
 class PostQuerySet(models.QuerySet):
     def published(self):
         return (
-            self.select_related('location', 'author', 'category')
+            self.prefetch_related('comments')
+            .select_related('location', 'author', 'category')
             .filter(
                 is_published=True,
                 category__is_published=True,
-                pub_date__lte=dt.datetime.now(tz=timezone.utc)
             )
+            .annotate(comment_count=Count('comments'))
         )
 
 

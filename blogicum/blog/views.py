@@ -1,10 +1,12 @@
 import time
-
+import datetime as dt
+from django.db.models import Count
 from django.shortcuts import render, get_object_or_404, get_list_or_404
 from django.conf import settings
 from django.core.paginator import Paginator
 
-from .models import Post, Category, User
+from .models import Post, Category, User, Comment
+from .forms import CommentForm, PostForm
 
 
 def index(request):
@@ -12,6 +14,7 @@ def index(request):
     page_obj = control_paginator(
         request.GET.get('page'),
         Post.published.order_by('title')
+        .filter(pub_date__lte=dt.datetime.now(tz=dt.timezone.utc))
     )
     context = {'page_obj': page_obj}
     return render(request, template, context)
@@ -19,8 +22,14 @@ def index(request):
 
 def post_detail(request, id):
     template = 'blog/detail.html'
-    postpage = get_object_or_404(Post.published, pk=id)
-    context = {'post': postpage, 'show_all': True}
+    post_page = get_object_or_404(
+        Post.published
+        .filter(pub_date__lte=dt.datetime.now(tz=dt.timezone.utc)),
+        pk=id
+    )
+    form = CommentForm()
+    comments = post_page.comments.all()
+    context = {'post': post_page, 'form': form, 'comments': comments}
     return render(request, template, context)
 
 
@@ -57,8 +66,11 @@ def control_paginator(page, list_obj):
 
 def create_post(request):
     template = 'blog/create.html'
-    #context = {'profile': user, 'page_obj': paginator}
-    #return render(request, template, context)
+    form = PostForm(request.POST or None)
+    context = {'form': form}
+    if form.is_valid():
+        form.save()
+    return render(request, template, context)
 
 
 def add_comment(request, post_id):
@@ -67,6 +79,23 @@ def add_comment(request, post_id):
 
 def profile_edit(request):
     pass
+
+
+def edit_post(request, post_id):
+    pass
+
+
+def delete_post(request, post_id):
+    pass
+
+
+def edit_comment(request, post_id, comment_id):
+    pass
+
+
+def delete_comment(request, post_id, comment_id):
+    pass
+
 
 def page_not_found(request, exception):
     return render(request, 'pages/404.html', status=404)
