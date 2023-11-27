@@ -120,8 +120,16 @@ def edit_comment(request, post_id, comment_id):
     return render(request, template, context)
 
 
+@login_required
 def delete_comment(request, post_id, comment_id):
-    pass
+    template = 'blog/comment.html'
+    comment = get_object_or_404(Comment, pk=comment_id)
+    form = CommentForm(request.POST or None, instance=comment)
+    context = {'form': form, 'comment': comment}
+    if form.is_valid():
+        comment.delete()
+        return redirect('blog:post_detail', id=post_id)
+    return render(request, template, context)
 
 
 def page_not_found(request, exception):
