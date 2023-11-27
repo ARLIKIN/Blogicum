@@ -1,5 +1,6 @@
 import datetime as dt
 
+from django.contrib.auth.forms import UserCreationForm
 from django.db.models import Count
 from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
@@ -7,7 +8,7 @@ from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 
 from .models import Post, Category, User, Comment
-from .forms import CommentForm, PostForm
+from .forms import CommentForm, PostForm, ProfileForm
 
 
 def index(request):
@@ -57,6 +58,7 @@ def profile(request, username):
             .prefetch_related('comments')
             .select_related('location', 'author', 'category')
             .annotate(comment_count=Count('comments'))
+            .order_by('pub_date')
     )
     context = {'profile': user, 'page_obj': page_obj}
     return render(request, template, context)
@@ -92,17 +94,46 @@ def add_comment(request, post_id):
     return redirect('blog:post_detail', id=post_id)
 
 
+@login_required
 def profile_edit(request):
-    pass
+    template = 'blog/user.html'
+    form = ProfileForm(request.POST or None, instance=request.user)
+    context = {'form': form}
+    if form.is_valid():
+        form.save()
+        return redirect('blog:profile', request.user.username)
+    return render(request, template, context)
 
 
 @login_required
 def edit_post(request, post_id):
-   pass
+    template = 'blog/create.html'
+    post = get_object_or_404(
+        Post.objects.select_related('location', 'author', 'category'),
+        pk=post_id
+    )
+    form = PostForm(request.POST or None, request.FILES or None, instance=post)
+    context = {'form': form}
+    if form.is_valid():
+        post = form.save(commit=False)
+        post.author = request.user
+        post.save()
+        return redirect(f'blog:post_detail', post_id)
+    return render(request, template, context)
 
 
+@login_required
 def delete_post(request, post_id):
-    pass
+    template = 'blog/create.html'
+    post = get_object_or_404(
+        Post.objects.select_related('location', 'author', 'category'),
+        pk=post_id
+    )
+    context = {'form': PostForm(instance=post)}
+    if request.method == 'POST':
+        post.delete()
+        return redirect(f'blog:profile', request.user.username)
+    return render(request, template, context)
 
 
 @login_required

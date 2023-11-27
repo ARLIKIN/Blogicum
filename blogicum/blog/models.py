@@ -52,6 +52,7 @@ class PostQuerySet(models.QuerySet):
                 pub_date__lte=dt.datetime.now(tz=dt.timezone.utc)
             )
             .annotate(comment_count=Count('comments'))
+            .order_by('pub_date')
         )
 
 
@@ -122,7 +123,7 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарий'
-        ordering = ('-created_at',)
+        ordering = ('created_at',)
 
     def __str__(self):
         return self.text
