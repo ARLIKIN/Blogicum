@@ -11,6 +11,7 @@ class PostForm(forms.ModelForm):
                 attrs={'type': 'datetime-local'}
             )
         }
+    image = forms.ImageField(required=False)
 
 
 class CommentForm(forms.ModelForm):

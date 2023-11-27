@@ -1,9 +1,8 @@
-import time
 import datetime as dt
-from django.db.models import Count
-from django.shortcuts import render, get_object_or_404, get_list_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
 
 from .models import Post, Category, User, Comment
 from .forms import CommentForm, PostForm
@@ -64,12 +63,16 @@ def control_paginator(page, list_obj):
     return paginator.get_page(page)
 
 
+@login_required
 def create_post(request):
     template = 'blog/create.html'
-    form = PostForm(request.POST or None)
+    form = PostForm(request.POST or None, request.FILES)
     context = {'form': form}
     if form.is_valid():
-        form.save()
+        post = form.save(commit=False)
+        post.author = request.user
+        post.save()
+        return redirect(f'profile/{request.user.username}/')
     return render(request, template, context)
 
 
