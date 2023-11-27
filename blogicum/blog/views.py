@@ -96,16 +96,28 @@ def profile_edit(request):
     pass
 
 
+@login_required
 def edit_post(request, post_id):
-    pass
+   pass
 
 
 def delete_post(request, post_id):
     pass
 
 
+@login_required
 def edit_comment(request, post_id, comment_id):
-    pass
+    template = 'blog/comment.html'
+    comment = get_object_or_404(Comment, pk=comment_id)
+    form = CommentForm(request.POST or None, instance=comment)
+    context = {'form': form, 'comment': comment}
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = comment.post
+        comment.save()
+        return redirect('blog:post_detail', id=post_id)
+    return render(request, template, context)
 
 
 def delete_comment(request, post_id, comment_id):
