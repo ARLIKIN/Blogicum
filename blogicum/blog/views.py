@@ -1,4 +1,6 @@
 import datetime as dt
+
+from django.db.models import Count
 from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -22,8 +24,7 @@ def index(request):
 def post_detail(request, id):
     template = 'blog/detail.html'
     post_page = get_object_or_404(
-        Post.published
-        .filter(pub_date__lte=dt.datetime.now(tz=dt.timezone.utc)),
+        Post.published.all(),
         pk=id
     )
     form = CommentForm()
@@ -52,7 +53,10 @@ def profile(request, username):
     user = get_object_or_404(User, username=username)
     page_obj = control_paginator(
         request.GET.get('page'),
-        user.posts(manager='published').all()
+        user.posts
+            .prefetch_related('comments')
+            .select_related('location', 'author', 'category')
+            .annotate(comment_count=Count('comments'))
     )
     context = {'profile': user, 'page_obj': page_obj}
     return render(request, template, context)
@@ -76,8 +80,16 @@ def create_post(request):
     return render(request, template, context)
 
 
+@login_required
 def add_comment(request, post_id):
-    pass
+    form = CommentForm(request.POST or None)
+    post = get_object_or_404(Post.published, pk=post_id)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = post
+        comment.save()
+    return redirect('blog:post_detail', id=post_id)
 
 
 def profile_edit(request):

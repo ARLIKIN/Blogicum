@@ -49,6 +49,7 @@ class PostQuerySet(models.QuerySet):
             .filter(
                 is_published=True,
                 category__is_published=True,
+                pub_date__lte=dt.datetime.now(tz=dt.timezone.utc)
             )
             .annotate(comment_count=Count('comments'))
         )
