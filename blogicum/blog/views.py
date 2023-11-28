@@ -1,7 +1,7 @@
 import datetime as dt
 
-from django.contrib.auth.forms import UserCreationForm
 from django.db.models import Count
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -15,8 +15,7 @@ def index(request):
     template = 'blog/index.html'
     page_obj = control_paginator(
         request.GET.get('page'),
-        Post.published.order_by('title')
-        .filter(pub_date__lte=dt.datetime.now(tz=dt.timezone.utc))
+        Post.published.all()
     )
     context = {'page_obj': page_obj}
     return render(request, template, context)
@@ -25,9 +24,12 @@ def index(request):
 def post_detail(request, id):
     template = 'blog/detail.html'
     post_page = get_object_or_404(
-        Post.published.all(),
+        Post.objects.select_related('location', 'author', 'category'),
         pk=id
     )
+    if (post_page.author.username != request.user.username
+            and post_page.is_published is not True):
+        raise Http404
     form = CommentForm()
     comments = post_page.comments.all()
     context = {'post': post_page, 'form': form, 'comments': comments}
@@ -52,13 +54,19 @@ def category_posts(request, category_slug):
 def profile(request, username):
     template = 'blog/profile.html'
     user = get_object_or_404(User, username=username)
-    page_obj = control_paginator(
-        request.GET.get('page'),
-        user.posts
+    if username != request.user.username:
+        post = user.posts(manager='published').all()
+    else:
+        post = (
+            user.posts
             .prefetch_related('comments')
             .select_related('location', 'author', 'category')
             .annotate(comment_count=Count('comments'))
-            .order_by('pub_date')
+            .order_by('-pub_date')
+        )
+    page_obj = control_paginator(
+        request.GET.get('page'),
+        post
     )
     context = {'profile': user, 'page_obj': page_obj}
     return render(request, template, context)
@@ -78,7 +86,7 @@ def create_post(request):
         post = form.save(commit=False)
         post.author = request.user
         post.save()
-        return redirect(f'profile/{request.user.username}/')
+        return redirect(f'blog:profile', request.user.username)
     return render(request, template, context)
 
 
@@ -112,6 +120,8 @@ def edit_post(request, post_id):
         Post.objects.select_related('location', 'author', 'category'),
         pk=post_id
     )
+    if post.author.username != request.user.username:
+        return redirect(f'blog:post_detail', post_id)
     form = PostForm(request.POST or None, request.FILES or None, instance=post)
     context = {'form': form}
     if form.is_valid():
@@ -129,6 +139,7 @@ def delete_post(request, post_id):
         Post.objects.select_related('location', 'author', 'category'),
         pk=post_id
     )
+    check_autor(post, request)
     context = {'form': PostForm(instance=post)}
     if request.method == 'POST':
         post.delete()
@@ -140,6 +151,7 @@ def delete_post(request, post_id):
 def edit_comment(request, post_id, comment_id):
     template = 'blog/comment.html'
     comment = get_object_or_404(Comment, pk=comment_id)
+    check_autor(comment, request)
     form = CommentForm(request.POST or None, instance=comment)
     context = {'form': form, 'comment': comment}
     if form.is_valid():
@@ -155,21 +167,21 @@ def edit_comment(request, post_id, comment_id):
 def delete_comment(request, post_id, comment_id):
     template = 'blog/comment.html'
     comment = get_object_or_404(Comment, pk=comment_id)
-    form = CommentForm(request.POST or None, instance=comment)
-    context = {'form': form, 'comment': comment}
-    if form.is_valid():
+    check_autor(comment, request)
+    context = {'comment': comment}
+    if request.method == 'POST':
         comment.delete()
         return redirect('blog:post_detail', id=post_id)
     return render(request, template, context)
 
 
-def page_not_found(request, exception):
-    return render(request, 'pages/404.html', status=404)
+def check_autor(db, request):
+    if db.author.username != request.user.username:
+        raise Http404
 
 
-def server_error(request):
-    return render(request, 'pages/404.html', status=405)
-
-
-def csrf_failure(request, reason=''):
-    return render(request, 'pages/403csrf.html', status=403)
+def get_post_user(post,user_boll):
+    if user_boll:
+        pass
+    else:
+        pass

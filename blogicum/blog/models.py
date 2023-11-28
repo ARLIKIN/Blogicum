@@ -51,8 +51,9 @@ class PostQuerySet(models.QuerySet):
                 category__is_published=True,
                 pub_date__lte=dt.datetime.now(tz=dt.timezone.utc)
             )
+            .order_by('-pub_date')
             .annotate(comment_count=Count('comments'))
-            .order_by('pub_date')
+
         )
 
 
@@ -90,9 +91,8 @@ class Post (PublishedModel, TitleModel):
         null=True,
         verbose_name='Категория'
     )
-
-    published = PostManager()
     objects = models.Manager()
+    published = PostManager()
 
     class Meta:
         verbose_name = 'публикация'
