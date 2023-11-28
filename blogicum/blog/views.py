@@ -1,5 +1,3 @@
-import datetime as dt
-
 from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -86,7 +84,7 @@ def create_post(request):
         post = form.save(commit=False)
         post.author = request.user
         post.save()
-        return redirect(f'blog:profile', request.user.username)
+        return redirect('blog:profile', request.user.username)
     return render(request, template, context)
 
 
@@ -121,14 +119,14 @@ def edit_post(request, post_id):
         pk=post_id
     )
     if post.author.username != request.user.username:
-        return redirect(f'blog:post_detail', post_id)
+        return redirect('blog:post_detail', post_id)
     form = PostForm(request.POST or None, request.FILES or None, instance=post)
     context = {'form': form}
     if form.is_valid():
         post = form.save(commit=False)
         post.author = request.user
         post.save()
-        return redirect(f'blog:post_detail', post_id)
+        return redirect('blog:post_detail', post_id)
     return render(request, template, context)
 
 
@@ -143,7 +141,7 @@ def delete_post(request, post_id):
     context = {'form': PostForm(instance=post)}
     if request.method == 'POST':
         post.delete()
-        return redirect(f'blog:profile', request.user.username)
+        return redirect('blog:profile', request.user.username)
     return render(request, template, context)
 
 
@@ -180,7 +178,7 @@ def check_autor(db, request):
         raise Http404
 
 
-def get_post_user(post,user_boll):
+def get_post_user(post, user_boll):
     if user_boll:
         pass
     else:

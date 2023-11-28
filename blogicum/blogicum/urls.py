@@ -12,14 +12,14 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/', include('django.contrib.auth.urls')),
     path(
-            'auth/registration/',
-            CreateView.as_view(
-                template_name='registration/registration_form.html',
-                form_class=ProfileForm,
-                success_url=reverse_lazy('blog:index'),
-            ),
-            name='registration',
+        'auth/registration/',
+        CreateView.as_view(
+            template_name='registration/registration_form.html',
+            form_class=ProfileForm,
+            success_url=reverse_lazy('blog:index'),
         ),
+        name='registration',
+    ),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
