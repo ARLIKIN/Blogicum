@@ -1,10 +1,9 @@
-from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
-from django.conf import settings
-from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 
+from django.conf import settings
 from .models import Post, Category, User, Comment
 from .forms import CommentForm, PostForm, ProfileForm
 
@@ -13,7 +12,7 @@ def index(request):
     template = 'blog/index.html'
     page_obj = control_paginator(
         request.GET.get('page'),
-        Post.published.all()
+        Post.post_manager.published().all()
     )
     context = {'page_obj': page_obj}
     return render(request, template, context)
@@ -22,7 +21,7 @@ def index(request):
 def post_detail(request, id):
     template = 'blog/detail.html'
     post_page = get_object_or_404(
-        Post.objects.select_related('location', 'author', 'category'),
+        Post.post_manager.published(False),
         pk=id
     )
     if (post_page.author.username != request.user.username
@@ -43,7 +42,7 @@ def category_posts(request, category_slug):
     )
     page_obj = control_paginator(
         request.GET.get('page'),
-        category.posts(manager='published').all()
+        category.posts(manager='post_manager').published().all()
     )
     context = {'page_obj': page_obj, 'category': category}
     return render(request, template, context)
@@ -52,16 +51,8 @@ def category_posts(request, category_slug):
 def profile(request, username):
     template = 'blog/profile.html'
     user = get_object_or_404(User, username=username)
-    if username != request.user.username:
-        post = user.posts(manager='published').all()
-    else:
-        post = (
-            user.posts
-            .prefetch_related('comments')
-            .select_related('location', 'author', 'category')
-            .annotate(comment_count=Count('comments'))
-            .order_by('-pub_date')
-        )
+    user_author = username != request.user.username
+    post = user.posts(manager='post_manager').published(user_author).all()
     page_obj = control_paginator(
         request.GET.get('page'),
         post
@@ -91,7 +82,7 @@ def create_post(request):
 @login_required
 def add_comment(request, post_id):
     form = CommentForm(request.POST or None)
-    post = get_object_or_404(Post.published, pk=post_id)
+    post = get_object_or_404(Post.post_manager.published(), pk=post_id)
     if form.is_valid():
         comment = form.save(commit=False)
         comment.author = request.user
@@ -137,7 +128,7 @@ def delete_post(request, post_id):
         Post.objects.select_related('location', 'author', 'category'),
         pk=post_id
     )
-    check_autor(post, request)
+    check_author(post, request)
     context = {'form': PostForm(instance=post)}
     if request.method == 'POST':
         post.delete()
@@ -149,7 +140,7 @@ def delete_post(request, post_id):
 def edit_comment(request, post_id, comment_id):
     template = 'blog/comment.html'
     comment = get_object_or_404(Comment, pk=comment_id)
-    check_autor(comment, request)
+    check_author(comment, request)
     form = CommentForm(request.POST or None, instance=comment)
     context = {'form': form, 'comment': comment}
     if form.is_valid():
@@ -165,7 +156,7 @@ def edit_comment(request, post_id, comment_id):
 def delete_comment(request, post_id, comment_id):
     template = 'blog/comment.html'
     comment = get_object_or_404(Comment, pk=comment_id)
-    check_autor(comment, request)
+    check_author(comment, request)
     context = {'comment': comment}
     if request.method == 'POST':
         comment.delete()
@@ -173,13 +164,6 @@ def delete_comment(request, post_id, comment_id):
     return render(request, template, context)
 
 
-def check_autor(db, request):
+def check_author(db, request):
     if db.author.username != request.user.username:
         raise Http404
-
-
-def get_post_user(post, user_boll):
-    if user_boll:
-        pass
-    else:
-        pass

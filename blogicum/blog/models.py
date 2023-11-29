@@ -40,24 +40,28 @@ User = get_user_model()
 
 
 class PostQuerySet(models.QuerySet):
-    def published(self):
-        return (
+    def published(self, filter_post):
+        post = (
             self.prefetch_related('comments')
             .select_related('location', 'author', 'category')
-            .filter(
+            .order_by('-pub_date')
+            .annotate(comment_count=Count('comments'))
+        )
+        if filter_post:
+            post = post.filter(
                 is_published=True,
                 category__is_published=True,
                 pub_date__lte=dt.datetime.now(tz=dt.timezone.utc)
             )
-            .order_by('-pub_date')
-            .annotate(comment_count=Count('comments'))
-
-        )
+        return post
 
 
 class PostManager(models.Manager):
     def get_queryset(self):
-        return PostQuerySet(self.model).published()
+        return PostQuerySet(self.model)
+
+    def published(self, filter_post=True):
+        return self.get_queryset().published(filter_post)
 
 
 class Post (PublishedModel, TitleModel):
@@ -90,7 +94,7 @@ class Post (PublishedModel, TitleModel):
         verbose_name='Категория'
     )
     objects = models.Manager()
-    published = PostManager()
+    post_manager = PostManager()
 
     class Meta:
         verbose_name = 'публикация'
