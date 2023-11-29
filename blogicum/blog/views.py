@@ -51,7 +51,7 @@ class IndexView(PaginateMixin, ListView):
     template_name = 'blog/index.html'
 
     def get_queryset(self) -> QuerySet:
-        return Post.post_manager.published().all()
+        return Post.post_manager.published()
 
 
 class CategoryView(PaginateMixin, ListView):
@@ -65,7 +65,7 @@ class CategoryView(PaginateMixin, ListView):
         )
         if not category.is_published:
             raise Http404
-        return category.posts(manager='post_manager').published().all()
+        return category.posts(manager='post_manager').published()
 
 
 class PostDetailView(DetailView):
