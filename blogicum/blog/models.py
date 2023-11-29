@@ -41,19 +41,17 @@ User = get_user_model()
 
 class PostQuerySet(models.QuerySet):
     def published(self, filter_post):
-        post = (
+        query_set = (
             self.prefetch_related('comments')
             .select_related('location', 'author', 'category')
-            .order_by('-pub_date')
             .annotate(comment_count=Count('comments'))
+            .order_by('-pub_date')
         )
-        if filter_post:
-            post = post.filter(
-                is_published=True,
-                category__is_published=True,
-                pub_date__lte=dt.datetime.now(tz=dt.timezone.utc)
-            )
-        return post
+        return query_set if not filter_post else query_set.filter(
+            is_published=True,
+            category__is_published=True,
+            pub_date__lte=dt.datetime.now(tz=dt.timezone.utc)
+        )
 
 
 class PostManager(models.Manager):
