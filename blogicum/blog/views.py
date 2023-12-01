@@ -71,7 +71,7 @@ class PostDetailView(DetailView):
 
     def get_object(self, queryset=None) -> Post:
         post = get_object_or_404(
-            Post.published.none_filter(),
+            Post.published.with_related_data(),
             id=self.kwargs[self.pk_url_kwarg]
         )
         if (self.request.user != post.author
@@ -93,7 +93,7 @@ class ProfileListView(PaginateMixin, ListView):
     def get_queryset(self, queryset=None) -> Post:
         user = get_object_or_404(User, username=self.kwargs['username'])
         if self.request.user == user:
-            post = user.posts(manager='published').none_filter().filter(
+            post = user.posts(manager='published').with_related_data().filter(
                 author__username=user.username
             )
         else:
@@ -131,7 +131,7 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse(
-            'blog:post_detail', kwargs={'id': self.kwargs['post_id']})
+            'blog:post_detail', kwargs={'id': self.kwargs[self.pk_url_kwarg]})
 
     def form_valid(self, form):
         form.instance.author = self.request.user

@@ -43,7 +43,7 @@ class PostQuerySet(models.QuerySet):
 
     def published(self):
         return (
-            self.none_filter()
+            self.with_related_data()
             .filter(
                 is_published=True,
                 category__is_published=True,
@@ -51,7 +51,7 @@ class PostQuerySet(models.QuerySet):
             )
         )
 
-    def none_filter(self):
+    def with_related_data(self):
         return (
             self.prefetch_related('comments')
             .select_related('location', 'author', 'category')
@@ -64,8 +64,8 @@ class PublishedPostManager(models.Manager):
     def get_queryset(self):
         return PostQuerySet(self.model).published()
 
-    def none_filter(self):
-        return PostQuerySet(self.model).none_filter()
+    def with_related_data(self):
+        return PostQuerySet(self.model).with_related_data()
 
 
 class Post (PublishedModel, TitleModel):
